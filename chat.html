@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>나만의 챗봇</title>
+  <style>
+    body {
+      font-family: 'Noto Sans KR', 'Segoe UI', sans-serif;
+      background-color: #eef2f6;
+      margin: 0;
+      padding: 0;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+      text-align: center;
+      font-size: 24px;
+    }
+
+    #chat {
+      max-width: 700px;
+      width: 100%;
+      border: none;
+      background: #fff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      box-sizing: border-box;
+
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-height: 200px;
+      max-height: calc(100vh - 40px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #initialButtons {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      margin-bottom: 10px;
+    }
+
+    button {
+      width: auto;
+      display: inline-block;
+      margin: 5px;
+      padding: 8px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      background-color: #5b90f7;
+      color: white;
+      transition: background 0.3s ease, transform 0.1s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    button:hover {
+      background-color: #4a7ddf;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* 📌 공지사항 칸 스타일 추가 */
+    #noticeSection {
+      background-color: #f0f8ff; /* 연한 파란색 배경 */
+      border: 1px solid #d0e8ff; /* 연한 파란색 테두리 */
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px; /* 버튼들과의 간격 */
+      margin-bottom: 20px; /* 채팅 영역과의 간격 */
+      font-size: 14px;
+      color: #333;
+      text-align: center; /* 텍스트 중앙 정렬 */
+      line-height: 1.5;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      flex-shrink: 0; /* 공지사항 칸이 줄어들지 않도록 */
+    }
+    #noticeSection p {
+        margin: 0; /* p 태그의 기본 마진 제거 */
+    }
+
+    #chatArea {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding-top: 10px;
+      padding-bottom: 10px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: #888 #f1f1f1;
+    }
+    #chatArea::-webkit-scrollbar {
+        width: 8px;
+    }
+    #chatArea::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    #chatArea::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+    }
+    #chatArea::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    .chat-entry {
+      margin: 12px 0;
+      padding: 14px 18px;
+      border-radius: 20px;
+      max-width: 85%;
+      line-height: 1.6;
+      word-wrap: break-word;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+
+    .user {
+      background-color: #d8f5d8;
+      text-align: left;
+      margin-right: auto;
+      margin-left: 0;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 20px;
+    }
+
+    .bot {
+      background-color: #f1f3f5;
+      text-align: left;
+      margin-left: auto;
+      margin-right: 0;
+      border-bottom-right-radius: 8px;
+      border-bottom-left-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <h2>사용하실 공가를 선택해주세요</h2>
+
+    <div id="initialButtons">
+      <div class="button-row">
+        <button onclick="handleClick(1)">휴가</button>
+        <button onclick="handleClick(2)">질병/입원</button>
+        <button onclick="handleClick(3)">예비군/민방위 훈련</button>
+        <button onclick="handleClick(4)">입사시험(면접)</button>
+      </div>
+      <div class="button-row">
+        <button onclick="handleClick(5)">경조사 (사망)</button>
+        <button onclick="handleClick(6)">경조사 (출산)</button>
+        <button onclick="handleClick(7)">경조사 (결혼)</button>
+      </div>
+    </div>
+
+    <div id="noticeSection">
+      <p>📢 휴가/공가는 발생일 <b>다음날</b>까지만 전산에 입력 가능합니다.<br> D+2부터는 입력이 불가능하니 <b>사전에 미리 신청하시고 정확한 서류 안내 받으시기바랍니다.</b></p>
+    </div>
+    <div id="chatArea"></div>
+  </div>
+
+ <script>
+    const responses = {
+      1: [
+        "단위기간 시작일마다 1일씩 생성됩니다.",
+        "누적하여 사용 불가, 다음 단위기간 휴가 미리 사용 불가",
+        "필요서류 : 휴가일 다음날 사무실에서 휴가신청서 작성"
+      ],
+      2: [
+        "전체훈련일수의 10%(12~13일)까지 사용 가능하며, 질병사유로 인한 병원진료만 해당됩니다. 미용, 일반건강검진 등은 제외됩니다.",
+        "필요서류 : 진료확인서 or 통원확인서(서류제목 자유)<br>필요내용 : 병원진료 일자, 질병명 or 질병코드",
+        "주의사항 : 진료비세부내역서(질병코드가 아님), 처방전 단독서류 제출시 처리 불가",
+        "병원에서 처방전만 제출해도된다고 하는경우가 있으나 공가처리는 고용노동부에서 진행하기때문에 정해진 서류로 발급받으시기바랍니다."
+      ],
+      3: [
+        "예비군, 민방위 훈련 참가 시 소요기간만큼 공가로 인정됩니다.",
+        "필요서류 : 훈련통지서, 훈련필증"
+      ],
+      4: [
+        "기업의 채용공고/채용제의에 응하여 면접에 응시하는경우 공가로 인정됩니다<br>단순 취업박람회 참석, 모의면접 불가능",
+        "필요서류 : <br> 1. 채용공고 링크<br>2. 면접일자 통보내역(문자, 메일 등 기업명 확인가능하도록 전화번호/이메일주소까지 캡쳐)<br>3. 면접확인서(확인 필수)<br>  3-a. 알파코 양식 : 해당기업 직인날인 필수, 직인날인 불가할경우 서명 날인 후 회사 명함 첨부,<br>  3-b. 기업 양식 : 해당기업 직인날인 필수, 직인날인 안되어있을경우 발급사이트, 이메일등 회사에서 발급했다는 내용이 확인되도록 주소창까지 캡쳐하여 증빙"
+      ],
+      5: [
+        "해당일부터 부모상(5일), 조부모상, 자녀, 자녀의 배우자(3일), 본인 및 배우자의 형제자매(1일) 인정.",
+        "필요서류 : 사망진단서, 가족관계증명서"
+      ],
+      6: [
+        "배우자 출산일 당일부터 5일 인정",
+        "필요서류 : 출생증명서"
+      ],
+      7: [
+        "본인(5일), 자녀(1일) 인정",
+        "필요서류 : 청첩장(날짜 표기 필수)"
+      ]
+    };
+
+    const chatArea = document.getElementById('chatArea');
+
+    function handleClick(option) {
+      chatArea.innerHTML = '';
+
+      const userMsg = document.createElement('div');
+      userMsg.className = 'chat-entry user';
+      userMsg.innerHTML = event.target.innerText;
+      chatArea.appendChild(userMsg);
+
+      if (responses[option]) {
+        responses[option].forEach(text => {
+          const botMsg = document.createElement('div');
+          botMsg.className = 'chat-entry bot';
+          botMsg.innerHTML = text;
+          chatArea.appendChild(botMsg);
+        });
+      } else {
+          const botMsg = document.createElement('div');
+          botMsg.className = 'chat-entry bot';
+          botMsg.innerHTML = "죄송합니다. 해당 옵션에 대한 정보가 없습니다.";
+          chatArea.appendChild(botMsg);
+      }
+
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+  </script>
+</body>
+</html>
